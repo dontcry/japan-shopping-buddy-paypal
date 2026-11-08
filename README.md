@@ -19,6 +19,11 @@
 3. **Caveats 防坑清单**：成色待核实 / 二手券后价陷阱 / 汇率时效 / 转运称重浮动 / 渠道覆盖，固定区块逐单提醒
 4. **收货地第一变量**：非日元显示先反推原价（Amazon 按收货地自动换算 HKD），比价前必问收货地——直邮 vs 转运税差实测可达 ¥400
 5. **安全卡点**：确认单 → 用户二次确认 → 沙箱 Orders 创建（≠扣款）→ 人工 approve → capture，全程凭证不入代码
+6. **Provenance 硬约束（防幻觉报价）**：所有金额（含 PayPal 订单金额）只能来自脚本结构化输出，确认单由 `arrival_price.py --quote` 直接渲染成 `quote.md`，模型只转述不填数（参照 Anthropic 官方 commerce-agents 的 provenance 设计）
+7. **状态三态，不把失败说成没货**：`current` / `empty` / `unavailable` 三态 + 错误码枚举（`AUTH_MISSING` / `NET_UNREACHABLE` / `HTTP_ERROR` / `BAD_JSON` / `API_ERROR`），降级只说"数据暂不可用"
+8. **入口分流 + 进度可视化**：单品页 / 搜索页 / 榜单页三种入口解析路径不同；六步进度清单（⬜1识别→⬜6支付）让多步链路对评委可见
+9. **支付幂等 + 动作声明**：下单失败先查单再决定是否重试，绝不自动重建订单；确认单顶部声明本次启用的 PayPal 动作（`orders.create/get/capture`）
+10. **负向边界清晰**：SKILL.md 明确写"用户已明确在国内平台买、只需国内比价时不触发"，不抢其他比价工具的活
 
 ## 收款闭环演示（沙箱）
 
