@@ -37,7 +37,9 @@ export PAYPAL_CLIENT_ID=.. PAYPAL_CLIENT_SECRET=..
 python3 scripts/paypal_billing.py create-order --amount-jpy 16500 --item-name "LYCEE POD020-LYB"
 #    → 返回 order_id + status=CREATED + approve 链接
 # 2. 用户在沙箱 approve（人工卡点，Agent 绝不代点）
-# 3. capture 收款（二次确认后执行）
+python3 scripts/paypal_billing.py get-order --order-id <order_id>      # 只读查状态，确认 APPROVED
+# 3. capture 收款（二次确认后执行；已 COMPLETED 则幂等返回，不重复扣款）
+python3 scripts/paypal_billing.py capture-order --order-id <order_id>
 ```
 
 安全边界：凭证只读环境变量；订单创建 ≠ 扣款；approve / capture 必须用户确认。
@@ -54,7 +56,7 @@ python3 scripts/paypal_billing.py create-order --amount-jpy 16500 --item-name "L
 ## 目录
 
 - `SKILL.md` — Agent 指令（六步 SOP + Gotchas + 禁止行为 + 退出条件）
-- `scripts/` — `rakuten_search.py`（乐天 RWS）、`exchange_rate.py`（汇率双源+缓存）、`arrival_price.py`（到手价试算）、`paypal_billing.py`（PayPal 沙箱 OAuth + Orders）
+- `scripts/` — `rakuten_search.py`（乐天 RWS）、`exchange_rate.py`（汇率双源+缓存）、`arrival_price.py`（到手价试算）、`paypal_billing.py`（PayPal 沙箱 OAuth + Orders）、`smoke_test.py`（冒烟回归，`python3 scripts/smoke_test.py` 一键复测 28 项契约，含支付安全断言）
 - `references/` — 渠道路由 / 到手价公式 / 转运价目 / 离线兜底快照 / PayPal API 文档
 - `assets/` — 支付确认单模板（Generator）+ 图标
 - `docs/demo-video-60s.md` — 参赛 Demo 视频 60 秒分镜脚本

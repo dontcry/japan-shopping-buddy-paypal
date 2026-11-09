@@ -73,6 +73,59 @@ def create_order(amount_jpy, item_name, secrets=None):
     }
 
 
+def get_order(order_id, secrets=None):
+    """查询订单状态（只读，不扣款）。capture 前必须先查，避免重复扣款。"""
+    token = get_token(secrets)["access_token"]
+    status, text = http_request(
+        "GET", f"{ORDERS_URL}/{order_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        use_proxy=False, timeout=25,
+    )
+    if status != 200:
+        raise JsbError(f"PayPal 查询订单失败 HTTP {status}: {text[:200]}")
+    data = json.loads(text)
+    return {
+        "order_id": data.get("id"),
+        "status": data.get("status"),
+        "intent": data.get("intent"),
+        "note": "查询为只读操作，不改变订单状态、不扣款。",
+    }
+
+
+def capture_order(order_id, secrets=None):
+    """捕获已 approve 的订单（真正扣款）。幂等：已 COMPLETED 的订单不再重试。"""
+    before = get_order(order_id, secrets)
+    if before["status"] == "COMPLETED":
+        return {"order_id": order_id, "status": "COMPLETED", "already_captured": True,
+                "note": "订单已完成收款，未重复扣款（幂等）。"}
+    if before["status"] != "APPROVED":
+        raise JsbError(f"订单状态 {before['status']} 不可 capture：需用户先在沙箱 approve（当前未 approve）")
+
+    token = get_token(secrets)["access_token"]
+    status, text = http_request(
+        "POST", f"{ORDERS_URL}/{order_id}/capture",
+        headers={"Authorization": f"Bearer {token}",
+                 "Content-Type": "application/json",
+                 "Prefer": "return=representation"},
+        body="{}",
+        use_proxy=False, timeout=25,
+    )
+    if status not in (200, 201):
+        raise JsbError(f"PayPal capture 失败 HTTP {status}: {text[:200]}")
+    data = json.loads(text)
+    capture = (data.get("purchase_units") or [{}])[0].get("payments", {}).get("captures", [{}])
+    capture_id = capture[0].get("id") if capture else None
+    amount = capture[0].get("amount", {}) if capture else {}
+    return {
+        "order_id": data.get("id"),
+        "status": data.get("status"),
+        "capture_id": capture_id,
+        "amount": amount,
+        "already_captured": False,
+        "note": "已按用户确认完成 capture（真实扣款）。请在确认单回填 capture_id 作为凭证。",
+    }
+
+
 def main():
     ap = argparse.ArgumentParser(description="PayPal 沙箱订单")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -80,13 +133,21 @@ def main():
     co = sub.add_parser("create-order")
     co.add_argument("--amount-jpy", type=float, required=True)
     co.add_argument("--item-name", default="日本商品")
+    go = sub.add_parser("get-order")
+    go.add_argument("--order-id", required=True)
+    cp = sub.add_parser("capture-order")
+    cp.add_argument("--order-id", required=True)
     args = ap.parse_args()
 
     try:
         if args.cmd == "get-token":
             result = get_token()
-        else:
+        elif args.cmd == "create-order":
             result = create_order(args.amount_jpy, args.item_name)
+        elif args.cmd == "get-order":
+            result = get_order(args.order_id)
+        else:
+            result = capture_order(args.order_id)
     except JsbError as e:
         msg = str(e)
         if "凭证" in msg:

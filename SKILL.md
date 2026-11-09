@@ -33,7 +33,7 @@ description: >-
 | scripts/exchange_rate.py | JPY→CNY 汇率（双源 + 缓存 + 兜底） | `python3 exchange_rate.py` |
 | scripts/arrival_price.py | 到手价试算（商品+转运+手续费+关税），可 `--quote` 直接产出确认单 | `python3 arrival_price.py --price-jpy 16500 --channel ems --quote --quote-type payment --quote-file quote.md` |
 | scripts/amazon_jp_snapshot.py | Amazon Japan 页面快照（标题/评分/榜单/价格尝试；`--bestsellers` 可用于榜单抽样） | `python3 amazon_jp_snapshot.py --asin B0G56GGKKK` |
-| scripts/paypal_billing.py | PayPal 沙箱 OAuth + 创建订单 | `PAYPAL_CLIENT_ID=.. PAYPAL_CLIENT_SECRET=.. python3 paypal_billing.py create-order --amount-jpy 16500` |
+| scripts/paypal_billing.py | PayPal 沙箱 OAuth + 订单（`get-token` / `create-order` / `get-order` / `capture-order`） | `PAYPAL_CLIENT_ID=.. PAYPAL_CLIENT_SECRET=.. python3 paypal_billing.py create-order --amount-jpy 16500`<br>`python3 paypal_billing.py get-order --order-id <id>`（只读查单）<br>`python3 paypal_billing.py capture-order --order-id <id>`（用户 approve 后才可执行） |
 
 ## 数据可信度契约（provenance 硬约束）
 
