@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""汇率查询：JPY→CNY（可选任意目标币种，用于美国/欧盟免税额阈值换算）。
+"""FX lookup: JPY->CNY (any target currency for US/EU de-minimis threshold conversion).
 
-主源 open.er-api.com/v6（免 key）→ 备源 exchangerate-api.com/v4 → 本地缓存 → 内置基准（仅 CNY）。
-用法：
+Primary open.er-api.com/v6 (keyless) -> backup exchangerate-api.com/v4 -> local cache -> built-in baseline (CNY only).
+Usage:
   python3 exchange_rate.py
-  python3 exchange_rate.py --to USD        # JPY→USD（美国 800 美元免税额换算）
-  python3 exchange_rate.py --baseline      # 取内置基准，不打网络（仅 CNY）
+  python3 exchange_rate.py --to USD        # JPY->USD (US USD 800 de minimis conversion)
+  python3 exchange_rate.py --baseline      # built-in baseline only, no network (CNY only)
 """
 import argparse
 import json
@@ -13,7 +13,7 @@ import os
 
 from _common import http_request, JsbError
 
-FALLBACK_RATE = 0.04224  # 实测基准（k780），仅 JPY→CNY
+FALLBACK_RATE = 0.04224  # measured baseline (k780), JPY->CNY only
 
 SOURCES = [
     ("open.er-api.com/v6", "https://open.er-api.com/v6/latest/JPY", "rates"),
@@ -44,11 +44,11 @@ def _write_cache(record, target):
 
 
 def fetch(target="CNY"):
-    """查询 JPY→target 汇率；网络异常时降级到缓存/内置基准，绝不抛异常。"""
+    """Query JPY->target FX; degrades to cache/baseline on network failure, never throws."""
     errors = []
     for source, url, rates_key in SOURCES:
         try:
-            # 汇率 API 属全球 CDN，无需日本代理，直连即可
+            # FX APIs are global CDNs; no Japan proxy needed, direct is fine
             status, text = http_request("GET", url, use_proxy=False, timeout=12)
             if status == 200:
                 data = json.loads(text)
@@ -81,7 +81,7 @@ def fetch(target="CNY"):
             "is_fallback": True,
             "fallback_reason": "network_failed: " + "; ".join(errors),
         }
-    # 非 CNY 无内置基准：返回空汇率，由调用方判定「阈值换算不可用」，不编数字
+    # non-CNY has no built-in baseline: return null rate so the caller marks "threshold conversion unavailable" — never invent a number
     return {
         "base": "JPY", "target": target, "rate": None,
         "source": "unavailable", "is_fallback": True,
@@ -90,14 +90,14 @@ def fetch(target="CNY"):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="查询 JPY→目标币种汇率")
-    ap.add_argument("--to", default="CNY", help="目标币种（默认 CNY）")
-    ap.add_argument("--baseline", action="store_true", help="仅返回内置基准（仅 CNY 可用）")
+    ap = argparse.ArgumentParser(description="Query JPY -> target currency FX rate")
+    ap.add_argument("--to", default="CNY", help="target currency (default CNY)")
+    ap.add_argument("--baseline", action="store_true", help="built-in baseline only (CNY only)")
     args = ap.parse_args()
 
     if args.baseline:
         if args.to != "CNY":
-            print(json.dumps({"error": "内置基准仅覆盖 JPY→CNY", "code": "NO_BASELINE"},
+            print(json.dumps({"error": "Built-in baseline covers JPY->CNY only", "code": "NO_BASELINE"},
                              ensure_ascii=False, indent=2))
             raise SystemExit(1)
         result = {

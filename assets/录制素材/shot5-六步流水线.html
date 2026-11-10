@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shot 5 · Six-Step Pipeline</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    width:100vw; height:100vh; overflow:hidden;
+    background: linear-gradient(135deg, #0a0f2e 0%, #16205a 55%, #0a0f2e 100%);
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center;
+  }
+  .title { font-size:64px; font-weight:800; letter-spacing:6px; margin-bottom:14px; }
+  .title span { color:#7ab8ff; }
+  .subtitle { font-size:26px; color:#9db4e8; margin-bottom:70px; letter-spacing:2px; }
+  .pipeline { display:flex; align-items:center; gap:18px; }
+  .step {
+    width:230px; height:230px; border-radius:24px;
+    background: rgba(255,255,255,0.06);
+    border:2px solid rgba(122,184,255,0.35);
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; padding:20px;
+  }
+  .step .num {
+    font-size:44px; font-weight:800; color:#7ab8ff; margin-bottom:14px;
+    width:74px; height:74px; line-height:74px; border-radius:50%;
+    background: rgba(122,184,255,0.15); border:2px solid #7ab8ff;
+  }
+  .step .name { font-size:32px; font-weight:700; margin-bottom:10px; letter-spacing:3px; }
+  .step .en { font-size:17px; color:#9db4e8; }
+  .arrow { font-size:44px; color:#7ab8ff; font-weight:700; }
+  .banner {
+    margin-top:80px; padding:22px 90px; border-radius:16px;
+    background: linear-gradient(90deg, #ff5f6d, #ffc371);
+    color:#1a1030; font-size:44px; font-weight:900; letter-spacing:10px;
+    box-shadow: 0 0 60px rgba(255,120,100,0.45);
+  }
+</style>
+</head>
+<body>
+  <div class="title">Japan Shopping Buddy <span>· Six-Step Pipeline</span></div>
+  <div class="subtitle">Identify → Route → Compare → Estimate → Confirm → Pay</div>
+  <div class="pipeline">
+    <div class="step"><div class="num">1</div><div class="name">Identify</div><div class="en">read the page</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">2</div><div class="name">Route</div><div class="en">pick channels</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">3</div><div class="name">Compare</div><div class="en">live prices</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">4</div><div class="name">Estimate</div><div class="en">landed cost</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">5</div><div class="name">Confirm</div><div class="en">user approves</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">6</div><div class="name">Pay</div><div class="en">capture once</div></div>
+  </div>
+  <div class="banner">NEVER AUTO-CHARGES</div>
+</body>
+</html>

@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""乐天 RWS 商品搜索（一手比价）。
+"""Rakuten RWS item search (first-hand price comparison).
 
-默认走本机代理 127.0.0.1:7890（日本站需代理可达）；缺凭证 / 代理不可达 / 返回错误时
-降级为 MOCK 兜底并给出友好提示，绝不抛异常栈。
+Uses local proxy 127.0.0.1:7890 by default (Japan site requires proxy reachability); on missing
+credentials / unreachable proxy / API errors it degrades to a MOCK fallback with a friendly
+message and never throws a raw stack trace.
 
-用法：
+Usage:
   RAKUTEN_APPLICATION_ID=.. RAKUTEN_ACCESS_KEY=.. python3 rakuten_search.py "フィギュア"
   RAKUTEN_APPLICATION_ID=.. RAKUTEN_ACCESS_KEY=.. python3 rakuten_search.py "フィギュア" --hits 5 --no-proxy
 """
@@ -16,17 +17,17 @@ from _common import load_secrets, http_request, JsbError
 
 ENDPOINT = "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701"
 
-# 离线 Mock（代理不可达 / 评委复测网络抖动时的兜底，标注非实时）
+# Offline mock (fallback for unreachable proxy / flaky judge-network; clearly marked non-live)
 MOCK_ITEMS = [
     {
-        "itemName": "LYCEE Sweet Days YUKATA Collection 黒髪（POD020-LYB）【MOCK样例】",
+        "itemName": "LYCEE Sweet Days YUKATA Collection 黒髪（POD020-LYB）[MOCK sample]",
         "itemCode": "azone-int:pod020lyb",
         "itemPrice": 16500,
         "catchcopy": "楽天限定・先着順・在庫わずか",
         "is_mock": True,
     },
     {
-        "itemName": "フィギュアケース コレクションケース 積み重ね可能【MOCK样例】",
+        "itemName": "フィギュアケース コレクションケース 積み重ね可能[MOCK sample]",
         "itemCode": "mock:10000368",
         "itemPrice": 748,
         "catchcopy": "八番屋 収納力アップ",
@@ -41,7 +42,7 @@ def _brief(text, limit=200):
 
 def _fallback(keyword, reason, code="RESULT_UNKNOWN"):
     return {
-        "status": "unavailable",   # 降级：数据不可用 ≠ 查无此商品
+        "status": "unavailable",   # degraded: data unavailable != no such item
         "code": code,
         "count": None,
         "hits": None,
@@ -49,7 +50,7 @@ def _fallback(keyword, reason, code="RESULT_UNKNOWN"):
         "items": MOCK_ITEMS,
         "is_fallback": True,
         "fallback_reason": reason,
-        "hint": "当前跨境网络较慢或凭证缺失，已展示历史基准行情（MOCK，非实时），请稍后重试或检查代理/凭证。",
+        "hint": "Cross-border network is slow or credentials are missing; showing historical baseline (MOCK, not live). Retry later or check proxy/credentials.",
     }
 
 
@@ -58,7 +59,7 @@ def search(keyword, hits=5, no_proxy=False, secrets=None):
     app_id = secrets.get("RAKUTEN_APPLICATION_ID")
     access_key = secrets.get("RAKUTEN_ACCESS_KEY")
     if not app_id or not access_key:
-        return _fallback(keyword, "缺少乐天凭证 RAKUTEN_APPLICATION_ID / RAKUTEN_ACCESS_KEY", "AUTH_MISSING")
+        return _fallback(keyword, "Missing Rakuten credentials RAKUTEN_APPLICATION_ID / RAKUTEN_ACCESS_KEY", "AUTH_MISSING")
 
     params = urllib.parse.urlencode({
         "format": "json",
@@ -72,7 +73,7 @@ def search(keyword, hits=5, no_proxy=False, secrets=None):
     try:
         status, text = http_request("GET", url, use_proxy=not no_proxy, timeout=15)
     except JsbError as e:
-        return _fallback(keyword, f"网络不可达：{e}", "NET_UNREACHABLE")
+        return _fallback(keyword, f"Network unreachable: {e}", "NET_UNREACHABLE")
 
     if status != 200:
         return _fallback(keyword, f"HTTP {status}: {_brief(text)}", "HTTP_ERROR")
@@ -80,7 +81,7 @@ def search(keyword, hits=5, no_proxy=False, secrets=None):
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        return _fallback(keyword, "响应非 JSON", "BAD_JSON")
+        return _fallback(keyword, "Response is not JSON", "BAD_JSON")
 
     if "errorMessage" in data or "error" in data or "Items" not in data:
         return _fallback(keyword, _brief(text, 200), "API_ERROR")
@@ -98,7 +99,7 @@ def search(keyword, hits=5, no_proxy=False, secrets=None):
             "is_mock": False,
         })
     return {
-        "status": "current" if items else "empty",   # empty = API 正常但零结果（确实查无此商品）
+        "status": "current" if items else "empty",   # empty = API OK but zero results (item genuinely not found)
         "code": None,
         "count": data.get("count"),
         "hits": hits,
@@ -109,7 +110,7 @@ def search(keyword, hits=5, no_proxy=False, secrets=None):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="乐天 RWS 商品搜索")
+    ap = argparse.ArgumentParser(description="Rakuten RWS item search")
     ap.add_argument("keyword")
     ap.add_argument("--hits", type=int, default=5)
     ap.add_argument("--no-proxy", action="store_true")

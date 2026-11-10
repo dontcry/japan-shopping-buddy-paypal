@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shot 6 · End Card</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    width:100vw; height:100vh; overflow:hidden;
+    background: linear-gradient(160deg, #04122e 0%, #0b2a5b 60%, #04122e 100%);
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center;
+  }
+  .logo-row { display:flex; align-items:center; gap:36px; margin-bottom:56px; }
+  .badge {
+    padding:16px 34px; border-radius:14px; font-size:30px; font-weight:800; letter-spacing:2px;
+  }
+  .paypal { background:#ffc439; color:#003087; }
+  .dev { background:#003087; color:#fff; border:2px solid #7ab8ff; }
+  .main { font-size:96px; font-weight:900; letter-spacing:4px; margin-bottom:18px;
+    background: linear-gradient(90deg,#7ab8ff,#c9e2ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tagline { font-size:30px; color:#9db4e8; letter-spacing:6px; margin-bottom:80px; }
+  .repo {
+    font-size:38px; font-weight:700; color:#fff; text-decoration:none;
+    padding:24px 56px; border-radius:14px;
+    background: rgba(255,255,255,0.08); border:2px solid rgba(122,184,255,0.5);
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .repo:hover { background: rgba(122,184,255,0.2); }
+  .footer { margin-top:70px; font-size:22px; color:#6f87bd; letter-spacing:3px; }
+</style>
+</head>
+<body>
+  <div class="logo-row">
+    <div class="badge paypal">PayPal</div>
+    <div class="badge dev">Developer</div>
+  </div>
+  <div class="main">Japan Shopping Buddy</div>
+  <div class="tagline">Read it · Count it · Pay with confidence</div>
+  <a class="repo" href="https://github.com/dontcry/japan-shopping-buddy-paypal">github.com/dontcry/japan-shopping-buddy-paypal</a>
+  <div class="footer">PayPal AI Hackathon · 2026</div>
+</body>
+</html>

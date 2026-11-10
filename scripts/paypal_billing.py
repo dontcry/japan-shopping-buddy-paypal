@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""PayPal 沙箱：OAuth 换 token + 创建日元订单（intent=CAPTURE）。
+"""PayPal sandbox: OAuth token + JPY order creation (intent=CAPTURE).
 
-⚠️ 仅创建订单并返回 approve 链接，永不自动 approve / capture（支付须用户二次确认）。
+⚠️ Only creates the order and returns the approve link; NEVER auto-approves /
+auto-captures (payment requires explicit user confirmation).
 
-用法：
+Usage:
   PAYPAL_CLIENT_ID=.. PAYPAL_CLIENT_SECRET=.. python3 paypal_billing.py get-token
   PAYPAL_CLIENT_ID=.. PAYPAL_CLIENT_SECRET=.. python3 paypal_billing.py create-order --amount-jpy 16500 --item-name "LYCEE POD020-LYB"
 """
@@ -21,7 +22,7 @@ def get_token(secrets=None):
     cid = secrets.get("PAYPAL_CLIENT_ID")
     sec = secrets.get("PAYPAL_CLIENT_SECRET")
     if not cid or not sec:
-        raise JsbError("缺少 PayPal 凭证：请设置 PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET")
+        raise JsbError("Missing PayPal credentials: set PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET")
 
     status, text = http_request(
         "POST", TOKEN_URL,
@@ -31,7 +32,7 @@ def get_token(secrets=None):
         use_proxy=False, timeout=25,
     )
     if status != 200:
-        raise JsbError(f"PayPal OAuth 失败 HTTP {status}: {text[:200]}")
+        raise JsbError(f"PayPal OAuth failed HTTP {status}: {text[:200]}")
     data = json.loads(text)
     return {
         "access_token": data.get("access_token"),
@@ -60,7 +61,7 @@ def create_order(amount_jpy, item_name, secrets=None):
         use_proxy=False, timeout=25,
     )
     if status not in (200, 201):
-        raise JsbError(f"PayPal Orders 失败 HTTP {status}: {text[:200]}")
+        raise JsbError(f"PayPal Orders failed HTTP {status}: {text[:200]}")
     data = json.loads(text)
     approve = next((l["href"] for l in data.get("links", []) if l.get("rel") == "approve"), None)
     return {
@@ -69,12 +70,12 @@ def create_order(amount_jpy, item_name, secrets=None):
         "amount": {"currency_code": "JPY", "value": f"{float(amount_jpy):.2f}"},
         "item_name": item_name,
         "approve_link": approve,
-        "note": "订单已创建（未付款）。请用户点击 approve_link 完成付款；切勿自动 approve/capture。",
+        "note": "Order created (NOT charged). The user must open approve_link to authorize the payment; never auto-approve/capture.",
     }
 
 
 def get_order(order_id, secrets=None):
-    """查询订单状态（只读，不扣款）。capture 前必须先查，避免重复扣款。"""
+    """Query order status (read-only, no charge). Must be checked before capture to avoid double charging."""
     token = get_token(secrets)["access_token"]
     status, text = http_request(
         "GET", f"{ORDERS_URL}/{order_id}",
@@ -82,24 +83,24 @@ def get_order(order_id, secrets=None):
         use_proxy=False, timeout=25,
     )
     if status != 200:
-        raise JsbError(f"PayPal 查询订单失败 HTTP {status}: {text[:200]}")
+        raise JsbError(f"PayPal order query failed HTTP {status}: {text[:200]}")
     data = json.loads(text)
     return {
         "order_id": data.get("id"),
         "status": data.get("status"),
         "intent": data.get("intent"),
-        "note": "查询为只读操作，不改变订单状态、不扣款。",
+        "note": "Read-only query: does not change the order status and does not charge.",
     }
 
 
 def capture_order(order_id, secrets=None):
-    """捕获已 approve 的订单（真正扣款）。幂等：已 COMPLETED 的订单不再重试。"""
+    """Capture an approved order (the real charge). Idempotent: a COMPLETED order is never retried."""
     before = get_order(order_id, secrets)
     if before["status"] == "COMPLETED":
         return {"order_id": order_id, "status": "COMPLETED", "already_captured": True,
-                "note": "订单已完成收款，未重复扣款（幂等）。"}
+                "note": "Order already captured; no duplicate charge (idempotent)."}
     if before["status"] != "APPROVED":
-        raise JsbError(f"订单状态 {before['status']} 不可 capture：需用户先在沙箱 approve（当前未 approve）")
+        raise JsbError(f"Order status {before['status']} cannot be captured: the user must approve in the sandbox first (not approved yet)")
 
     token = get_token(secrets)["access_token"]
     status, text = http_request(
@@ -111,7 +112,7 @@ def capture_order(order_id, secrets=None):
         use_proxy=False, timeout=25,
     )
     if status not in (200, 201):
-        raise JsbError(f"PayPal capture 失败 HTTP {status}: {text[:200]}")
+        raise JsbError(f"PayPal capture failed HTTP {status}: {text[:200]}")
     data = json.loads(text)
     capture = (data.get("purchase_units") or [{}])[0].get("payments", {}).get("captures", [{}])
     capture_id = capture[0].get("id") if capture else None
@@ -122,17 +123,17 @@ def capture_order(order_id, secrets=None):
         "capture_id": capture_id,
         "amount": amount,
         "already_captured": False,
-        "note": "已按用户确认完成 capture（真实扣款）。请在确认单回填 capture_id 作为凭证。",
+        "note": "Captured after explicit user approval (real charge). Record capture_id in the confirmation sheet as proof.",
     }
 
 
 def main():
-    ap = argparse.ArgumentParser(description="PayPal 沙箱订单")
+    ap = argparse.ArgumentParser(description="PayPal sandbox orders")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("get-token")
     co = sub.add_parser("create-order")
     co.add_argument("--amount-jpy", type=float, required=True)
-    co.add_argument("--item-name", default="日本商品")
+    co.add_argument("--item-name", default="Japanese product")
     go = sub.add_parser("get-order")
     go.add_argument("--order-id", required=True)
     cp = sub.add_parser("capture-order")
@@ -150,7 +151,7 @@ def main():
             result = capture_order(args.order_id)
     except JsbError as e:
         msg = str(e)
-        if "凭证" in msg:
+        if "credential" in msg.lower():
             code = "AUTH_MISSING"
         elif "HTTP" in msg:
             code = "HTTP_ERROR"

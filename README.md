@@ -61,9 +61,9 @@ python3 scripts/paypal_billing.py capture-order --order-id <order_id>
 - `assets/` — 支付确认单模板（Generator）+ 图标
 - `docs/demo-video-60s.md` — 参赛 Demo 视频 60 秒分镜脚本
 
-## 实测记录（2026-11-06/07）
+## 实测记录（2026-11-06/07，2026-11-10 复测）
 
-- 乐天 RWS 真实返回商品行情（非 Mock），如 ace GENE 背包 5 家店统一 ¥33,000
+- 乐天 RWS 真实返回商品行情（非 Mock）：2026-11-10 实测关键词 `Lycee 浴衣` 返回 5 家店真实报价 ¥1,980~¥2,640（`status=current`，含店名 / itemCode / 抓取时间）；2026-11-06 曾实测 ace GENE 背包 5 家店统一 ¥33,000——乐天在售价随店铺与档期轮换，复测请以当日返回为准
 - Amazon 日本站页面快照突破反爬，解析出标题 + 主购买价（¥33,000 / 森贝儿 C-81 ¥3,827）
 - PayPal 沙箱 create-order 成功（order_id + approve 链接，status=CREATED 未扣款）
 - 汇率双源实时刷新（JPY→CNY 0.042214 @2026-11-07）

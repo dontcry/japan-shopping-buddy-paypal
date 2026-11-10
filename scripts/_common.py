@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""日淘搭子 · 公共工具库
+"""Japan Shopping Buddy · shared utilities
 
-凭证统一从环境变量读取，杜绝硬编码；HTTP 走 urllib（无第三方依赖）。
+Credentials are read from environment only (no hardcoding); HTTP via urllib (no third-party deps).
 
-凭证优先级：环境变量 > JSB_SECRETS 指向的 JSON 文件。
-需读取的键：RAKUTEN_APPLICATION_ID / RAKUTEN_ACCESS_KEY / PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET
+Priority: env vars > JSON file pointed to by JSB_SECRETS.
+Keys read: RAKUTEN_APPLICATION_ID / RAKUTEN_ACCESS_KEY / PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET
 """
 import base64
 import json
@@ -17,11 +17,11 @@ DEFAULT_PROXY = "http://127.0.0.1:7890"
 
 
 class JsbError(Exception):
-    """业务/可预期错误：向上打印友好提示，不抛裸异常栈。"""
+    """Business/expected error: surfaced upward as a friendly message, never a raw stack trace."""
 
 
 def load_secrets():
-    """返回凭证字典，键为大写环境变量名。"""
+    """Return a credentials dict keyed by uppercase env-var names."""
     keys = [
         "RAKUTEN_APPLICATION_ID",
         "RAKUTEN_ACCESS_KEY",
@@ -57,7 +57,7 @@ def _opener(use_proxy):
 
 
 def http_request(method, url, headers=None, body=None, use_proxy=None, timeout=15):
-    """返回 (status_code, text)。可预期的 HTTP 错误也返回 status+body，供上层解析。"""
+    """Return (status_code, text). Expected HTTP errors also return status+body for upstream parsing."""
     if use_proxy is None:
         use_proxy = proxy_enabled()
     payload = None
@@ -78,7 +78,7 @@ def http_request(method, url, headers=None, body=None, use_proxy=None, timeout=1
             pass
         return e.code, raw
     except urllib.error.URLError as e:
-        raise JsbError(f"网络不可达：{e.reason}")
+        raise JsbError(f"Network unreachable: {e.reason}")
 
 
 def basic_auth(client_id, client_secret):
